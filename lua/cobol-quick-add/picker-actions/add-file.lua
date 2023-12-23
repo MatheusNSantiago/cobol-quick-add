@@ -24,7 +24,11 @@ function M.add_file()
         end,
       }, {
         title = 'Tamanho do arquivo',
-        on_submit = function(value) M.insert_file_description(filename, value) end,
+        on_submit = function(value)
+          M.insert_file_description(filename, value)
+
+          vim.defer_fn(function() M.insert_open_file(filename) end, 100)
+        end,
       })
     end,
   })
@@ -50,9 +54,9 @@ function M.insert_file_control_entry(filename)
     end
 
     local last_assignment = file_assignments[#file_assignments]
-    local last_assignment_line = last_assignment.range.finish + 1
+    local last_assignment_line = last_assignment.range.finish + 2
 
-    M.insert_lines(last_assignment_line + 1, { entry })
+    M.insert_lines(last_assignment_line, { entry })
   end)
 end
 
@@ -74,16 +78,31 @@ function M.insert_file_description(filename, filesize)
     local is_first_description = #file_descriptions == 0
     if is_first_description then
       local first_description_line = file_sec.range.start + 1
-      M.insert_lines(first_description_line + 4, description)
-
+      M.insert_lines(first_description_line + 3, description)
       return
     end
+
     local last_description = file_descriptions[#file_descriptions]
     local last_description_line = last_description.range.finish + 1
 
     table.insert(description, 1, U.spaces(6) .. '*')
     M.insert_lines(last_description_line + 6, description)
   end)
+end
+
+---@param filename string
+function M.insert_open_file(filename)
+  local is_input = filename:sub(#filename) == 'E'
+  local type = is_input and 'INPUT' or 'OUTPUT'
+  local entry = U.spaces(11) .. 'OPEN ' .. type .. U.spaces(is_input and 2 or 1) .. filename .. '.'
+
+  lsp.tree_provider(function(tree)
+    local sec = lsp.search_node('130000-ABRE-ARQUIVOS', tree)
+    if not sec then return end
+
+    local entry_line = sec.range.finish + 1
+    M.insert_lines(entry_line - 3, { entry })
+  end, M.buf)
 end
 
 ---@param ... { title : string, on_submit : fun(value: string) }

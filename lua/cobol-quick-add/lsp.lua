@@ -1,4 +1,4 @@
-local U = require("cobol-quick-add.utils")
+local U = require('cobol-quick-add.utils')
 
 local M = {}
 
@@ -47,11 +47,9 @@ local request = function(bufnr, method, params, handler)
 end
 
 ---@param callback fun(tree: Node): any
-M.tree_provider = function(callback)
-  local params = {
-    textDocument = vim.lsp.util.make_text_document_params(),
-  }
-  request(0, 'textDocument/documentSymbol', params, function(_, result, _)
+M.tree_provider = function(callback, bufnr)
+  local params = { textDocument = vim.lsp.util.make_text_document_params() }
+  request(bufnr, 'textDocument/documentSymbol', params, function(_, result, _)
     local tree = result[1]
     tree = M._clean_tree(tree)
     callback(tree)
