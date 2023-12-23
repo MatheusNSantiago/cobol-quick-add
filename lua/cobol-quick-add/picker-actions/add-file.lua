@@ -27,7 +27,8 @@ function M.add_file()
         on_submit = function(value)
           M.insert_file_description(filename, value)
 
-          vim.defer_fn(function() M.insert_open_file(filename) end, 100)
+          vim.defer_fn(function() M.insert_open_file(filename) end, 40)
+          vim.defer_fn(function() M.insert_close_file(filename) end, 80)
         end,
       })
     end,
@@ -90,7 +91,6 @@ function M.insert_file_description(filename, filesize)
   end)
 end
 
----@param filename string
 function M.insert_open_file(filename)
   local is_input = filename:sub(#filename) == 'E'
   local type = is_input and 'INPUT' or 'OUTPUT'
@@ -98,6 +98,18 @@ function M.insert_open_file(filename)
 
   lsp.tree_provider(function(tree)
     local sec = lsp.search_node('130000-ABRE-ARQUIVOS', tree)
+    if not sec then return end
+
+    local entry_line = sec.range.finish + 1
+    M.insert_lines(entry_line - 3, { entry })
+  end, M.buf)
+end
+
+function M.insert_close_file(filename)
+  local entry = U.spaces(11) .. 'CLOSE ' .. filename .. '.'
+
+  lsp.tree_provider(function(tree)
+    local sec = lsp.search_node('310000-FECHA-ARQUIVOS', tree)
     if not sec then return end
 
     local entry_line = sec.range.finish + 1
